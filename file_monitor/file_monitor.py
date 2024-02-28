@@ -1,5 +1,7 @@
 import time
 
+from loguru import logger
+
 from synchronizer.synchronizer import Synchronizer
 from utils import file_utils
 
@@ -22,6 +24,11 @@ class FileMonitor:
 
     def start(self):
         """ Запуск мониторинга. """
+        logger.info(
+            'Программа синхронизации файлов начинает работу с директорией {directory}'.format(
+                directory=self.local_file_folder,
+            ),
+        )
         while True:
             self.perform_synchronization()
             time.sleep(self.interval)
@@ -35,10 +42,25 @@ class FileMonitor:
 
         for file in remote_files:
             if file not in local_files.keys():
+                logger.info(
+                    'Подлежащий удалению файл {file} обнаружен в удалённом хранилище'.format(
+                        file=file
+                    ),
+                )
                 self.synchronizer.delete(file)
 
         for file in local_files.keys():
             if file not in remote_files:
+                logger.info(
+                    'Файл {file} не найден в удалённом хранилище'.format(
+                        file=file
+                    ),
+                )
                 self.synchronizer.upload(local_files[file].path)
             elif local_files[file].modified_at > remote_files[file].modified_at:
+                logger.info(
+                    'Устаревший файл {file} обнаружен в удалённом хранилище'.format(
+                        file=file
+                    ),
+                )
                 self.synchronizer.update(local_files[file].path)

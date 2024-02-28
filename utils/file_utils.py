@@ -1,6 +1,7 @@
 """ Вспомогательные методы для работы с файлами. """
 import datetime
 import os
+from pathlib import Path
 from typing import Dict, Union
 
 
@@ -91,3 +92,10 @@ def get_files_info(path: str) -> Union[Dict[str, FileInfo], None]:
         for f in os.scandir(path)
         if f.is_file()
     }
+
+
+def get_abs_path(path: str) -> str:
+    if os.path.isabs(path):
+        return path
+
+    return os.path.join(Path(__file__).parent.parent, path)

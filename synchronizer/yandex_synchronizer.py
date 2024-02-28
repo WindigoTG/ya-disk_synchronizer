@@ -2,6 +2,7 @@ import datetime
 from typing import Dict, Union
 
 import requests
+from loguru import logger
 
 from utils import file_utils
 from synchronizer.synchronizer import Synchronizer
@@ -49,9 +50,35 @@ class YandexSynchronizer(Synchronizer):
                 timeout=self.timeout,
             )
         except ConnectionError:
+            logger.error(
+                'Файл {file} не загружен. Ошибка соединения.'.format(
+                    file=filename,
+                ),
+            )
             return
         except TimeoutError:
+            logger.error(
+                'Файл {file} не загружен. Таймаут.'.format(
+                    file=filename,
+                ),
+            )
             return
+
+        if response.status_code == 201 or response.status_code == 202:
+            logger.info(
+                'Файл {file} успешно загружен.'.format(
+                    file=filename,
+                ),
+            )
+            return
+
+        error = response.json().get('error')
+        logger.error(
+            'Файл {file} не загружен. Причина: {error}.'.format(
+                file=filename,
+                error=error
+            ),
+        )
 
     def update(self, path: str):
         """
@@ -80,9 +107,35 @@ class YandexSynchronizer(Synchronizer):
                 timeout=self.timeout,
             )
         except ConnectionError:
+            logger.error(
+                'Файл {file} не обновлён. Ошибка соединения.'.format(
+                    file=filename,
+                ),
+            )
             return
         except TimeoutError:
+            logger.error(
+                'Файл {file} не обновлён. Таймаут.'.format(
+                    file=filename,
+                ),
+            )
             return
+
+        if response.status_code == 201 or response.status_code == 202:
+            logger.info(
+                'Файл {file} успешно обновлён.'.format(
+                    file=filename,
+                ),
+            )
+            return
+
+        error = response.json().get('error')
+        logger.error(
+            'Файл {file} не обновлён. Причина: {error}.'.format(
+                file=filename,
+                error=error
+            ),
+        )
 
     def delete(self, filename: str):
         """ Удалить файл из хранилища. """
@@ -100,9 +153,35 @@ class YandexSynchronizer(Synchronizer):
                 timeout=self.timeout,
             )
         except ConnectionError:
+            logger.error(
+                'Файл {file} не удалён. Ошибка соединения.'.format(
+                    file=filename,
+                ),
+            )
             return
         except TimeoutError:
+            logger.error(
+                'Файл {file} не удалён. Таймаут.'.format(
+                    file=filename,
+                ),
+            )
             return
+
+        if response.status_code == 204 or response.status_code == 202:
+            logger.info(
+                'Файл {file} успешно удалён.'.format(
+                    file=filename,
+                ),
+            )
+            return
+
+        error = response.json().get('error')
+        logger.error(
+            'Файл {file} не удалён. Причина: {error}.'.format(
+                file=filename,
+                error=error
+            ),
+        )
 
     def get_info(self) -> Union[Dict[str, file_utils.FileInfo], None]:
         """ Получить информации о файлах в хранилище. """
@@ -119,8 +198,14 @@ class YandexSynchronizer(Synchronizer):
                 timeout=self.timeout,
             )
         except ConnectionError:
+            logger.error(
+                'Не удалось получить информацию об удалённом хранилище. Ошибка соединения.',
+            )
             return
         except TimeoutError:
+            logger.error(
+                'Не удалось получить информацию об удалённом хранилище. Таймаут.',
+            )
             return
 
         if response.status_code == 404:
@@ -138,6 +223,13 @@ class YandexSynchronizer(Synchronizer):
                 if f['type'] == 'file'
             }
 
+        error = response.json().get('error')
+        logger.error(
+            'Не удалось получить информацию об удалённом хранилище. Причина: {error}.'.format(
+                error=error
+            ),
+        )
+
     def get_upload_url(
             self,
             filename: str,
@@ -153,7 +245,6 @@ class YandexSynchronizer(Synchronizer):
         )
         if overwrite:
             url += '&overwrite=true'
-        print(url)
 
         try:
             response = requests.get(
@@ -162,8 +253,20 @@ class YandexSynchronizer(Synchronizer):
                 timeout=self.timeout,
             )
         except ConnectionError:
+            logger.error(
+                'Не удалось получить ссылку для {action} файла {file}. Ошибка соединения.'.format(
+                    action='обновления' if overwrite else 'загрузки',
+                    file=filename,
+                ),
+            )
             return
         except TimeoutError:
+            logger.error(
+                'Не удалось получить ссылку для {action} файла {file}. Таймаут.'.format(
+                    action='обновления' if overwrite else 'загрузки',
+                    file=filename,
+                ),
+            )
             return
 
         # Согласно документации, при отсутствии указанной папки
@@ -177,6 +280,15 @@ class YandexSynchronizer(Synchronizer):
 
         if response.status_code == 200:
             return response.json()['href']
+
+        error = response.json().get('error')
+        logger.error(
+            'Не удалось получить ссылку для {action} файла {file}. Причина: {error}.'.format(
+                action='обновления' if overwrite else 'загрузки',
+                error=error,
+                file=filename,
+            ),
+        )
 
     def create_remote_folder(self) -> bool:
         """ Создать папку в удалённом хранилище. """
@@ -194,8 +306,18 @@ class YandexSynchronizer(Synchronizer):
                 timeout=self.timeout,
             )
         except ConnectionError:
+            logger.error(
+                'Не удалось создать папку {directory} в удалённом хранилище. Ошибка соединения.'.format(
+                    directory=self.remote_folder_name,
+                ),
+            )
             return False
         except TimeoutError:
+            logger.error(
+                'Не удалось создать папку {directory} в удалённом хранилище. Таймаут.'.format(
+                    directory=self.remote_folder_name,
+                ),
+            )
             return False
 
         return response.status_code == 201
