@@ -1,8 +1,9 @@
-from typing import Union, Any, Dict
+import datetime
+from typing import Dict, Union
 
 import requests
 
-import utils.file_io_utils as file_utils
+from utils import file_utils
 from synchronizer.synchronizer import Synchronizer
 
 
@@ -22,7 +23,12 @@ class YandexSynchronizer(Synchronizer):
         self.timeout = timeout
 
     def upload(self, path: str):
-        """ Загрузить файл в хранилище. """
+        """
+        Загрузить файл в хранилище.
+
+        Args:
+            path (str): путь к файлу.
+        """
         if not file_utils.check_if_exists(path):
             return
 
@@ -48,13 +54,18 @@ class YandexSynchronizer(Synchronizer):
             return
 
     def update(self, path: str):
-        """ Обновить файл в хранилище. """
+        """
+        Обновить файл в хранилище.
+
+        Args:
+            path (str): путь к файлу.
+        """
         if not file_utils.check_if_exists(path):
             return
 
         filename = file_utils.get_base_name(path)
 
-        upload_url = self.get_upload_url(filename)
+        upload_url = self.get_upload_url(filename, True)
         if not upload_url:
             return
 
@@ -93,7 +104,7 @@ class YandexSynchronizer(Synchronizer):
         except TimeoutError:
             return
 
-    def get_info(self) -> Union[Dict[str, Any], None]:
+    def get_info(self) -> Union[Dict[str, file_utils.FileInfo], None]:
         """ Получить информации о файлах в хранилище. """
         url = '{base_url}{base_args}{folder}'.format(
             base_url=self.BASE_URL,
@@ -117,7 +128,15 @@ class YandexSynchronizer(Synchronizer):
                 return self.get_info()
 
         if response.status_code == 200:
-            return response.json()['_embedded']['items']
+            return {
+                f['name']: file_utils.FileInfo(
+                    name=f['name'],
+                    path=f['path'],
+                    modified_at=datetime.datetime.fromisoformat(f['modified'])
+                )
+                for f in response.json()['_embedded']['items']
+                if f['type'] == 'file'
+            }
 
     def get_upload_url(
             self,
@@ -132,6 +151,8 @@ class YandexSynchronizer(Synchronizer):
             folder=self.remote_folder_name,
             filename=filename,
         )
+        if overwrite:
+            url += '&overwrite=true'
         print(url)
 
         try:

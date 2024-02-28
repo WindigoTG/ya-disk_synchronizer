@@ -1,5 +1,8 @@
 from abc import ABC
+from typing import Dict
 
+
+from utils.file_utils import FileInfo
 
 class Synchronizer(ABC):
     """ Базовый класс-синхронизатор файлов в удалённом хранилище. """
@@ -26,5 +29,5 @@ class Synchronizer(ABC):
     def delete(self, filename: str):
         """ Удалить файл из хранилища. """
 
-    def get_info(self):
+    def get_info(self) -> Dict[str, FileInfo]:
         """ Получить информации о файлах в хранилище. """
