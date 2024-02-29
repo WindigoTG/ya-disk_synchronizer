@@ -2,6 +2,7 @@ import datetime
 from typing import Dict, Union
 
 import requests
+from requests.exceptions import ConnectionError, Timeout
 from loguru import logger
 
 from utils import file_utils
@@ -56,7 +57,7 @@ class YandexSynchronizer(Synchronizer):
                 ),
             )
             return
-        except TimeoutError:
+        except Timeout:
             logger.error(
                 'Файл {file} не загружен. Таймаут.'.format(
                     file=filename,
@@ -113,7 +114,7 @@ class YandexSynchronizer(Synchronizer):
                 ),
             )
             return
-        except TimeoutError:
+        except Timeout:
             logger.error(
                 'Файл {file} не обновлён. Таймаут.'.format(
                     file=filename,
@@ -159,11 +160,17 @@ class YandexSynchronizer(Synchronizer):
                 ),
             )
             return
-        except TimeoutError:
+        except Timeout:
             logger.error(
                 'Файл {file} не удалён. Таймаут.'.format(
                     file=filename,
                 ),
+            )
+            return
+
+        if response.status_code == 401:
+            logger.error(
+                'Файл {file} не удалён. Недействительный oauth token.',
             )
             return
 
@@ -202,9 +209,15 @@ class YandexSynchronizer(Synchronizer):
                 'Не удалось получить информацию об удалённом хранилище. Ошибка соединения.',
             )
             return
-        except TimeoutError:
+        except Timeout:
             logger.error(
                 'Не удалось получить информацию об удалённом хранилище. Таймаут.',
+            )
+            return
+
+        if response.status_code == 401:
+            logger.error(
+                'Не удалось получить информацию об удалённом хранилище. Недействительный oauth token.',
             )
             return
 
@@ -260,12 +273,18 @@ class YandexSynchronizer(Synchronizer):
                 ),
             )
             return
-        except TimeoutError:
+        except Timeout:
             logger.error(
                 'Не удалось получить ссылку для {action} файла {file}. Таймаут.'.format(
                     action='обновления' if overwrite else 'загрузки',
                     file=filename,
                 ),
+            )
+            return
+
+        if response.status_code == 401:
+            logger.error(
+                'Не удалось получить ссылку для {action} файла {file}. Недействительный oauth token.',
             )
             return
 
@@ -312,13 +331,18 @@ class YandexSynchronizer(Synchronizer):
                 ),
             )
             return False
-        except TimeoutError:
+        except Timeout:
             logger.error(
                 'Не удалось создать папку {directory} в удалённом хранилище. Таймаут.'.format(
                     directory=self.remote_folder_name,
                 ),
             )
             return False
+
+        if response.status_code == 401:
+            logger.error(
+                'Не удалось создать папку {directory} в удалённом хранилище. Недействительный oauth token.',
+            )
 
         return response.status_code == 201
 

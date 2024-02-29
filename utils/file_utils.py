@@ -94,8 +94,5 @@ def get_files_info(path: str) -> Union[Dict[str, FileInfo], None]:
     }
 
 
-def get_abs_path(path: str) -> str:
-    if os.path.isabs(path):
-        return path
-
-    return os.path.join(Path(__file__).parent.parent, path)
+def is_abs_path(path: str) -> bool:
+    return os.path.isabs(path)

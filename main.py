@@ -19,6 +19,11 @@ def configure_logger(log_directory: str):
     logger.configure(**log_cong)
 
 
+def display_error_message(message: str):
+    print(message)
+    input('Нажмите любую клавишу для выхода.')
+
+
 def main():
     config = dotenv_values(".env")
 
@@ -31,28 +36,37 @@ def main():
     try:
         synchronization_interval = int(synchronization_interval)
     except (TypeError, ValueError):
-        print('Необходимо указать synchronization_interval в секундах в .env файле')
+        display_error_message(
+            'Необходимо указать synchronization_interval в секундах в .env файле',
+        )
         return
 
-    if not local_folder_path:
-        print('Необходимо указать local_folder_path в .env файле')
-        return
-
-    local_folder_path = file_utils.get_abs_path(local_folder_path)
-    if not file_utils.check_if_exists(local_folder_path):
-        print('Необходимо указать существующую директорию в local_folder_path в .env файле')
+    if not (
+        local_folder_path and
+        file_utils.is_abs_path(local_folder_path) and
+        file_utils.check_if_exists(local_folder_path)
+    ):
+        display_error_message(
+            'Необходимо указать абсолютный путь к существующей директории в local_folder_path в .env файле',
+        )
         return
 
     if not remote_folder_name:
-        print('Необходимо указать remote_folder_name в .env файле')
+        display_error_message(
+            'Необходимо указать remote_folder_name в .env файле',
+        )
         return
 
     if not oauth_token:
-        print('Необходимо указать oauth_token в .env файле')
+        display_error_message(
+            'Необходимо указать oauth_token в .env файле',
+        )
         return
 
-    if not log_directory:
-        print('Необходимо указать log_directory в .env файле')
+    if not (log_directory and file_utils.is_abs_path(log_directory)):
+        display_error_message(
+            'Необходимо указать абсолютный путь log_directory в .env файле',
+        )
         return
 
     configure_logger(file_utils.get_abs_path(log_directory))
@@ -63,4 +77,7 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        pass
