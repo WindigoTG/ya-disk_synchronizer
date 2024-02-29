@@ -69,7 +69,7 @@ def main():
         )
         return
 
-    configure_logger(file_utils.get_abs_path(log_directory))
+    configure_logger(log_directory)
 
     ys = YandexSynchronizer(oauth_token, local_folder_path, remote_folder_name)
     fm = FileMonitor(local_folder_path, int(synchronization_interval), ys)
