@@ -30,7 +30,7 @@ def main():
 
     try:
         synchronization_interval = int(synchronization_interval)
-    except ValueError:
+    except (TypeError, ValueError):
         print('Необходимо указать synchronization_interval в секундах в .env файле')
         return
 
