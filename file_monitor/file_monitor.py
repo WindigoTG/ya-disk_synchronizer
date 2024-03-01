@@ -41,7 +41,7 @@ class FileMonitor:
             return
 
         for file in remote_files:
-            if file not in local_files.keys():
+            if file not in local_files.keys() or not local_files[file].size:
                 logger.info(
                     'Подлежащий удалению файл {file} обнаружен в удалённом хранилище'.format(
                         file=file
@@ -50,6 +50,9 @@ class FileMonitor:
                 self.synchronizer.delete(file)
 
         for file in local_files.keys():
+            if not local_files[file].size:
+                continue
+
             if file not in remote_files:
                 logger.info(
                     'Файл {file} не найден в удалённом хранилище'.format(
@@ -57,7 +60,9 @@ class FileMonitor:
                     ),
                 )
                 self.synchronizer.upload(local_files[file].path)
-            elif local_files[file].modified_at > remote_files[file].modified_at:
+                continue
+
+            if local_files[file].modified_at > remote_files[file].modified_at:
                 logger.info(
                     'Устаревший файл {file} обнаружен в удалённом хранилище'.format(
                         file=file

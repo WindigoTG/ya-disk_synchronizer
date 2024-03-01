@@ -9,11 +9,19 @@ class FileInfo:
     name: str
     path: str
     modified_at: datetime.datetime
+    size: int
 
-    def __init__(self, name: str, path: str, modified_at: datetime.datetime):
+    def __init__(
+        self,
+        name: str,
+        path: str,
+        modified_at: datetime.datetime,
+        size: int,
+    ):
         self.name = name
         self.path = path
         self.modified_at = modified_at
+        self.size = size
 
     def __str__(self):
         return f'File {self.name}, modified at {self.modified_at}'
@@ -86,7 +94,8 @@ def get_files_info(path: str) -> Union[Dict[str, FileInfo], None]:
             modified_at=datetime.datetime.fromtimestamp(
                 f.stat().st_mtime,
                 tz=datetime.timezone.utc
-            )
+            ),
+            size=f.stat().st_size,
         )
         for f in os.scandir(path)
         if f.is_file()

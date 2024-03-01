@@ -43,12 +43,10 @@ class YandexSynchronizer(Synchronizer):
         payload = file_utils.get_file_bytes(path)
         if not payload:
             return
-
         try:
             response = requests.put(
                 upload_url,
                 data=payload,
-                timeout=self.timeout,
             )
         except ConnectionError:
             logger.error(
@@ -105,7 +103,6 @@ class YandexSynchronizer(Synchronizer):
             response = requests.put(
                 upload_url,
                 data=payload,
-                timeout=self.timeout,
             )
         except ConnectionError:
             logger.error(
@@ -230,7 +227,8 @@ class YandexSynchronizer(Synchronizer):
                 f['name']: file_utils.FileInfo(
                     name=f['name'],
                     path=f['path'],
-                    modified_at=datetime.datetime.fromisoformat(f['modified'])
+                    modified_at=datetime.datetime.fromisoformat(f['modified']),
+                    size=f['size'],
                 )
                 for f in response.json()['_embedded']['items']
                 if f['type'] == 'file'
